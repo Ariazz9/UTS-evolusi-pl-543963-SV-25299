@@ -14,11 +14,14 @@ frontend/.env
 frontend/.env.*
 !frontend/.env.example
 
-# SQLite & Logs
+# SQLite & Logs & Cache
 *.sqlite
 *.sqlite-journal
 *.log
+.phpunit.result.cache
+backend/.phpunit.result.cache
 backend/storage/logs/*.log
+backend/bootstrap/cache/*.php
 
 # IDE & OS
 .idea/
