@@ -1,0 +1,14 @@
+vendor/
+node_modules/
+.git/
+.github/
+.env
+.env.*
+!.env.example
+tests/
+*.sqlite
+*.sqlite-journal
+*.log
+storage/logs/*.log
+.phpunit.result.cache
+.phpunit.cache
