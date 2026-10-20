@@ -6,6 +6,15 @@ FROM dunglas/frankenphp:1.4.4-php8.2-bookworm
 ENV SERVER_NAME=":8000"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
+# Pasang binary Composer resmi (versi 2.8)
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
+
+# Install paket sistem yang dibutuhkan (unzip & git untuk Composer)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install ekstensi PHP yang dibutuhkan untuk Laravel dan basis data MySQL/SQLite
 RUN install-php-extensions \
     pdo_mysql \
