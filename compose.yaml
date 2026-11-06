@@ -21,6 +21,11 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ===============================================================
   # Service 2: Backend Laravel dengan FrankenPHP (Soal 6.a, 6.b, Soal 7)
@@ -45,6 +50,9 @@ services:
       DB_DATABASE: ${DB_DATABASE:-toko_bangunan}
       DB_USERNAME: ${DB_USERNAME:-tb_user}
       DB_PASSWORD: ${DB_PASSWORD:-secretpassword123}
+      # Logging ke stdout (Tugas P10 Soal 1)
+      LOG_CHANNEL: stdout
+      LOG_LEVEL: debug
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -52,6 +60,19 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    # Healthcheck dinamis memeriksa DB dan Cache via /health (Tugas P10 Soal 3 & 4)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    # Pembatasan ukuran log container (Tugas P10 Soal 6)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ===============================================================
   # Service 3: Frontend Vue.js dengan Nginx (Soal 6.a, 6.b)
@@ -69,6 +90,12 @@ services:
       - backend
     networks:
       - app-network
+    # Pembatasan ukuran log container (Tugas P10 Soal 6)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # ===============================================================
 # Named Volume untuk persistensi data MySQL (Soal 6.d)
