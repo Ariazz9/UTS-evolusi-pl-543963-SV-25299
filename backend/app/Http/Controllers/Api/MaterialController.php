@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Material;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MaterialController extends Controller
 {
@@ -41,6 +42,25 @@ class MaterialController extends Controller
         }
 
         $material = Material::create($validated);
+
+        // Log terstruktur: Menyimpan data (Level: info)
+        Log::info('Material data successfully created', [
+            'who' => [
+                'user_id' => $request->user()?->id,
+                'email'   => $request->user()?->email,
+                'ip'      => $request->ip(),
+            ],
+            'what' => [
+                'action'        => 'create_material',
+                'material_id'   => $material->id,
+                'material_name' => $material->name,
+                'category'      => $material->category,
+                'unit'          => $material->unit,
+                'price'         => $material->price,
+                'stock'         => $material->stock,
+            ],
+            'reason' => 'Material successfully validated and persisted to database',
+        ]);
 
         return response()->json([
             'status' => 'success',
@@ -93,6 +113,22 @@ class MaterialController extends Controller
         ]);
 
         $material->update($validated);
+
+        // Log terstruktur: Memperbarui data (Level: info)
+        Log::info('Material data successfully updated', [
+            'who' => [
+                'user_id' => $request->user()?->id,
+                'email'   => $request->user()?->email,
+                'ip'      => $request->ip(),
+            ],
+            'what' => [
+                'action'        => 'update_material',
+                'material_id'   => $material->id,
+                'material_name' => $material->name,
+                'updated_fields'=> array_keys($validated),
+            ],
+            'reason' => 'Material successfully updated and persisted to database',
+        ]);
 
         return response()->json([
             'status' => 'success',
