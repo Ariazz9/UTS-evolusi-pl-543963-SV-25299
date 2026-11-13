@@ -30,3 +30,7 @@ backend/bootstrap/cache/*.php
 .DS_Store
 Thumbs.db
 
+# Documentation & Context
+Context/
+
+
