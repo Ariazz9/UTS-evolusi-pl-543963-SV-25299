@@ -1,8 +1,5 @@
 services:
-  # ===============================================================
-  # Service 1: Basis Data MySQL (Soal 6.a & 6.d)
-  # Menggunakan named volume 'db_data' agar data persisten
-  # ===============================================================
+
   database:
     image: mysql:8.4
     container_name: tb_database
@@ -27,10 +24,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ===============================================================
-  # Service 2: Backend Laravel dengan FrankenPHP (Soal 6.a, 6.b, Soal 7)
-  # Terhubung ke database via hostname service 'database'
-  # ===============================================================
+
   backend:
     build:
       context: ./backend
@@ -44,13 +38,11 @@ services:
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_URL: http://localhost:8000
       DB_CONNECTION: mysql
-      # Terhubung melalui nama service di jaringan Docker Compose (Soal 6.b)
       DB_HOST: database
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-toko_bangunan}
       DB_USERNAME: ${DB_USERNAME:-tb_user}
       DB_PASSWORD: ${DB_PASSWORD:-secretpassword123}
-      # Logging ke stdout (Tugas P10 Soal 1)
       LOG_CHANNEL: stdout
       LOG_LEVEL: debug
     ports:
@@ -60,24 +52,18 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    # Healthcheck dinamis memeriksa DB dan Cache via /health (Tugas P10 Soal 3 & 4)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 20s
-    # Pembatasan ukuran log container (Tugas P10 Soal 6)
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # ===============================================================
-  # Service 3: Frontend Vue.js dengan Nginx (Soal 6.a, 6.b)
-  # Menyajikan SPA dan reverse-proxy API ke service 'backend'
-  # ===============================================================
   frontend:
     build:
       context: ./frontend
@@ -90,22 +76,16 @@ services:
       - backend
     networks:
       - app-network
-    # Pembatasan ukuran log container (Tugas P10 Soal 6)
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-# ===============================================================
-# Named Volume untuk persistensi data MySQL (Soal 6.d)
-# Data tetap aman setelah docker compose down lalu docker compose up -d
-# ===============================================================
 volumes:
   db_data:
     driver: local
 
-# Jaringan terisolasi antar container (Soal 6.b)
 networks:
   app-network:
     driver: bridge
