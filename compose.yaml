@@ -7,8 +7,8 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-toko_bangunan}
       MYSQL_USER: ${DB_USERNAME:-tb_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-secretpassword123}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret123}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -24,7 +24,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-
   backend:
     build:
       context: ./backend
@@ -34,7 +33,7 @@ services:
     environment:
       APP_NAME: "TB Bangun Jaya API"
       APP_ENV: production
-      APP_KEY: ${APP_KEY:-base64:/hrBxezQCjDCAANl9VOSDKh8LZ1AvSNWbvdDE82B868=}
+      APP_KEY: ${APP_KEY}
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_URL: http://localhost:8000
       DB_CONNECTION: mysql
@@ -42,7 +41,7 @@ services:
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-toko_bangunan}
       DB_USERNAME: ${DB_USERNAME:-tb_user}
-      DB_PASSWORD: ${DB_PASSWORD:-secretpassword123}
+      DB_PASSWORD: ${DB_PASSWORD}
       LOG_CHANNEL: stdout
       LOG_LEVEL: debug
     ports:
@@ -82,11 +81,109 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: tb_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: tb_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: tb_cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    command:
+      - '-containerd=/run/containerd/containerd.sock'
+      - '-containerd-namespace=moby'
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: tb_node_exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   db_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
   app-network:
     driver: bridge
-
