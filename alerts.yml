@@ -1,0 +1,32 @@
+groups:
+  - name: application_monitoring_alerts
+    rules:
+      - alert: DatabaseServiceDown
+        expr: (time() - container_last_seen{image=~".*mysql.*"} > 30) or (absent(container_last_seen{image=~".*mysql.*"}) == 1)
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Layanan Basis Data MySQL (tb_database) terdeteksi mati atau tidak aktif"
+          description: "Kontainer database MySQL tidak lagi mengirimkan metrik status ke cAdvisor selama lebih dari 30 detik."
+          action: "Segera lakukan pemeriksaan status kontainer dengan 'docker compose ps', analisis log kegagalan via 'docker compose logs database --tail 50', dan hidupkan kembali layanan dengan 'docker compose start database'."
+
+      - alert: BackendServiceDown
+        expr: (time() - container_last_seen{image=~".*backend.*"} > 30) or (absent(container_last_seen{image=~".*backend.*"}) == 1)
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Layanan Backend Laravel API (tb_backend) terdeteksi mati atau tidak aktif"
+          description: "Kontainer backend Laravel tidak lagi mengirimkan metrik status ke cAdvisor selama lebih dari 30 detik."
+          action: "Periksa status kontainer melalui 'docker compose ps', cek log error dengan 'docker compose logs backend --tail 50', dan restart layanan dengan 'docker compose restart backend'."
+
+      - alert: MonitoringTargetDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Target pemantauan {{ $labels.job }} tidak dapat dijangkau"
+          description: "Prometheus gagal melakukan scraping metrik pada target {{ $labels.instance }} (job: {{ $labels.job }})."
+          action: "Periksa apakah kontainer layanan pemantau {{ $labels.job }} sedang berjalan dan pastikan jaringan antar-kontainer app-network berfungsi normal."
